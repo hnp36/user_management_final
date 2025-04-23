@@ -78,7 +78,7 @@ jobs:
       - name: Scan the Docker image
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'user_management_final-fastapi:latest'
+          image-ref: 'hetvipatel36/user_management_final-fastapi:latest'
           format: 'table'
           exit-code: '1' # Fail the job if vulnerabilities are found
           ignore-unfixed: true
