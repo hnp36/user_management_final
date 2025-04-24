@@ -42,8 +42,8 @@ class Settings(BaseSettings):
 
     smtp_server: str = Field(default='sandbox.smtp.mailtrap.io')
     smtp_port: int = Field(default=587)
-    smtp_username: str = Field(default='your-mailtrap-username')
-    smtp_password: str = Field(default='your-mailtrap-password')
+    smtp_username: str = Field(default='ccfa182face11a')
+    smtp_password: str = Field(default='abf930a4e1c3d1')
 
     smtp_from: str = Field(default='no-reply@example.com', alias='smtp_FROM')
     smtp_from_name: str = Field(default='User Management App', alias='smtp_FROM_NAME')
