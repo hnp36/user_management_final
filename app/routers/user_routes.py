@@ -126,10 +126,16 @@ async def list_users(
 
 @user_router.post("/register/", response_model=UserResponse, tags=["Login and Registration"])
 async def register(user_data: UserCreate, session: AsyncSession = Depends(get_db), email_service: EmailService = Depends(get_email_service)):
-    user = await UserService.register_user(session, user_data.model_dump(), email_service)
-    if user:
-        return user
-    raise HTTPException(status_code=400, detail="Email already exists")
+    try:
+        created_user = await UserService.create(session, user_data.model_dump(), email_service)
+        if created_user:
+            return created_user
+        # If we get here, there was some other error (not email exists)
+        raise HTTPException(status_code=500, detail="Failed to create user")
+    except ValueError as e:
+        if "Email already exists" in str(e):
+            raise HTTPException(status_code=400, detail="Email already exists")
+        raise HTTPException(status_code=400, detail=str(e))
 
 @user_router.post("/login/", response_model=TokenResponse, tags=["Login and Registration"])
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: AsyncSession = Depends(get_db)):

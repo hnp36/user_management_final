@@ -43,6 +43,8 @@ def user_response_data(user_base_data):
         "last_name": user_base_data["last_name"],
         "role": user_base_data["role"],
         "email": user_base_data["email"],
+        "preferred_language": "en",  
+        "preferred_timezone": "UTC",
         # "last_login_at": datetime.now(),
         # "created_at": datetime.now(),
         # "updated_at": datetime.now(),
