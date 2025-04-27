@@ -1,5 +1,7 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import declarative_base, sessionmaker
+from fastapi import Depends
+from contextlib import asynccontextmanager
 
 Base = declarative_base()
 
@@ -23,3 +25,12 @@ class Database:
         if cls._session_factory is None:
             raise ValueError("Database not initialized. Call `initialize()` first.")
         return cls._session_factory
+
+# Use an async context manager for session management
+@asynccontextmanager
+async def get_db():
+    """Returns a database session to be used in FastAPI routes."""
+    session_factory = Database.get_session_factory()
+    async with session_factory() as session:
+        yield session
+

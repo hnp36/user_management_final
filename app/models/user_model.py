@@ -42,6 +42,8 @@ class User(Base):
         is_locked (bool): Flag indicating if the account is locked.
         created_at (datetime): Timestamp when the user was created, set by the server.
         updated_at (datetime): Timestamp of the last update, set by the server.
+        preferred_language (str): User's preferred language code (e.g., 'en', 'es').
+        preferred_timezone (str): User's preferred timezone (e.g., 'UTC', 'America/New_York').
 
     Methods:
         lock_account(): Locks the user account.
@@ -73,7 +75,10 @@ class User(Base):
     verification_token = Column(String, nullable=True)
     email_verified: Mapped[bool] = Column(Boolean, default=False, nullable=False)
     hashed_password: Mapped[str] = Column(String(255), nullable=False)
-
+    
+    # New fields for localization
+    preferred_language: Mapped[str] = Column(String(5), default="en", nullable=False)
+    preferred_timezone: Mapped[str] = Column(String(50), default="UTC", nullable=False)
 
     def __repr__(self) -> str:
         """Provides a readable representation of a user object."""
@@ -95,3 +100,11 @@ class User(Base):
         """Updates the professional status and logs the update time."""
         self.is_professional = status
         self.professional_status_updated_at = func.now()
+        
+    def set_language(self, language_code: str):
+        """Sets the user's preferred language."""
+        self.preferred_language = language_code
+        
+    def set_timezone(self, timezone: str):
+        """Sets the user's preferred timezone."""
+        self.preferred_timezone = timezone
