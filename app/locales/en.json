@@ -1,0 +1,21 @@
+{
+    "greeting": "Hello!",
+    "welcome": "Welcome to our application!",
+    "email_verification_subject": "Verify Your Account",
+    "password_reset_subject": "Password Reset Instructions",
+    "account_locked_subject": "Account Locked Notification",
+    "user_not_found": "User not found",
+    "email_already_exists": "Email already exists",
+    "invalid_credentials": "Incorrect email or password",
+    "account_locked": "Account locked due to too many failed login attempts",
+    "invalid_token": "Could not validate credentials",
+    "permission_denied": "Operation not permitted",
+    "email_verified": "Email verified successfully",
+    "invalid_verification_token": "Invalid or expired verification token",
+    "internal_error": "An unexpected error occurred",
+    "language_updated": "Language preference updated successfully",
+    "timezone_updated": "Timezone updated successfully",
+    "language_switch_success": "Language switched to English",
+    "profile_update_success": "Profile updated successfully",
+    "verification_email_sent": "Verification email has been sent to your address"
+  }

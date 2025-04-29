@@ -1,0 +1,21 @@
+{
+    "greeting": "¡Hola!",
+    "welcome": "¡Bienvenido a nuestra aplicación!",
+    "email_verification_subject": "Verifique su cuenta",
+    "password_reset_subject": "Instrucciones para restablecer la contraseña",
+    "account_locked_subject": "Notificación de cuenta bloqueada",
+    "user_not_found": "Usuario no encontrado",
+    "email_already_exists": "El correo electrónico ya existe",
+    "invalid_credentials": "Correo electrónico o contraseña incorrectos",
+    "account_locked": "Cuenta bloqueada debido a demasiados intentos fallidos de inicio de sesión",
+    "invalid_token": "No se pudieron validar las credenciales",
+    "permission_denied": "Operación no permitida",
+    "email_verified": "Correo electrónico verificado con éxito",
+    "invalid_verification_token": "Token de verificación inválido o caducado",
+    "internal_error": "Se produjo un error inesperado",
+    "language_updated": "Preferencia de idioma actualizada con éxito",
+    "timezone_updated": "Zona horaria actualizada con éxito",
+    "language_switch_success": "Idioma cambiado a español",
+    "profile_update_success": "Perfil actualizado con éxito",
+    "verification_email_sent": "Se ha enviado un correo electrónico de verificación a su dirección"
+  }

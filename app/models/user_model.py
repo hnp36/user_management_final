@@ -73,7 +73,8 @@ class User(Base):
     verification_token = Column(String, nullable=True)
     email_verified: Mapped[bool] = Column(Boolean, default=False, nullable=False)
     hashed_password: Mapped[str] = Column(String(255), nullable=False)
-
+    preferred_language: Mapped[str] = Column(String(2), nullable=False, default="en")
+    timezone: Mapped[str] = Column(String(50), nullable=False, default="UTC")
 
     def __repr__(self) -> str:
         """Provides a readable representation of a user object."""
@@ -95,3 +96,11 @@ class User(Base):
         """Updates the professional status and logs the update time."""
         self.is_professional = status
         self.professional_status_updated_at = func.now()
+
+    def set_language_preference(self, language: str):
+        """Sets the user's preferred language."""
+        self.preferred_language = language
+
+def set_timezone(self, timezone: str):
+    """Sets the user's preferred timezone."""
+    self.timezone = timezone
