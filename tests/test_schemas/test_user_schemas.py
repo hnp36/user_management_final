@@ -1,3 +1,4 @@
+
 import uuid
 import pytest
 from pydantic import ValidationError
@@ -33,6 +34,10 @@ def user_update_data():
         "bio": "I specialize in backend development with Python and Node.js.",
         "profile_picture_url": "https://example.com/profile_pictures/john_doe_updated.jpg"
     }
+
+@pytest.fixture
+def user_update_with_password_data(user_update_data):
+    return {**user_update_data, "password": "NewSecurePassword456!"}
 
 @pytest.fixture
 def user_response_data(user_base_data):
@@ -71,6 +76,11 @@ def test_user_update_valid(user_update_data):
     assert user_update.email == user_update_data["email"]
     assert user_update.first_name == user_update_data["first_name"]
 
+# Test UserUpdate with password
+def test_user_update_with_password_valid(user_update_with_password_data):
+    user_update = UserUpdate(**user_update_with_password_data)
+    assert user_update.password == user_update_with_password_data["password"]
+
 # Tests for UserResponse
 def test_user_response_valid(user_response_data):
     user = UserResponse(**user_response_data)
@@ -108,3 +118,56 @@ def test_user_base_url_invalid(url, user_base_data):
     user_base_data["profile_picture_url"] = url
     with pytest.raises(ValidationError):
         UserBase(**user_base_data)
+
+# Enhanced password validation tests for UserCreate
+@pytest.mark.parametrize("password, expected_error", [
+    ("weakpass", "Password must include at least one uppercase letter."),
+    ("SHORT1!", "Password must be at least 8 characters long."),
+    ("nouppercase123!", "Password must include at least one uppercase letter."),
+    ("NOLOWERCASE123!", "Password must include at least one lowercase letter."),
+    ("NoNumber!", "Password must include at least one number."),
+    ("NoSpecialChar123", "Password must include at least one special character"),
+    ("password123A!", "Password is too common and easily guessable."),
+])
+def test_user_create_password_invalid(password, expected_error, user_create_data):
+    user_create_data["password"] = password
+    with pytest.raises(ValidationError) as exc_info:
+        UserCreate(**user_create_data)
+    assert expected_error in str(exc_info.value)
+
+# Password validation tests for UserUpdate
+@pytest.mark.parametrize("password, expected_error", [
+    ("weakpass", "Password must include at least one uppercase letter."),
+    ("SHORT1!", "Password must be at least 8 characters long."),
+    ("nouppercase123!", "Password must include at least one uppercase letter."),
+    ("NOLOWERCASE123!", "Password must include at least one lowercase letter."),
+    ("NoNumber!", "Password must include at least one number."),
+    ("NoSpecialChar123", "Password must include at least one special character"),
+    ("password123A!", "Password is too common and easily guessable."),
+])
+def test_user_update_password_invalid(password, expected_error, user_update_data):
+    user_update_data["password"] = password
+    with pytest.raises(ValidationError) as exc_info:
+        UserUpdate(**user_update_data)
+    assert expected_error in str(exc_info.value)
+
+# Test valid password patterns
+@pytest.mark.parametrize("password", [
+    "StrongP@ss123",
+    "Complex!Password789",
+    "Very$Good#Pass456",
+    "S3cur3P@ssw0rd!",
+])
+def test_valid_password_patterns(password, user_create_data):
+    user_create_data["password"] = password
+    user = UserCreate(**user_create_data)
+    assert user.password == password
+
+@pytest.fixture
+async def users_with_same_role_50_users(db_session, unique_user_data):
+    users = [
+        unique_user_data for _ in range(50)  # Ensures unique data for all users
+    ]
+    db_session.add_all(users)
+    await db_session.commit()
+    return users
