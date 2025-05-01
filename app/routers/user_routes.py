@@ -215,6 +215,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Async
 
         access_token = create_access_token(
             data={"sub": user.email, "role": str(user.role.name)},
+            
             expires_delta=access_token_expires
         )
 
