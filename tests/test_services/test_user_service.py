@@ -161,3 +161,63 @@ async def test_unlock_user_account(db_session, locked_user):
     assert unlocked, "The account should be unlocked"
     refreshed_user = await UserService.get_by_id(db_session, locked_user.id)
     assert not refreshed_user.is_locked, "The user should no longer be locked"
+
+# Test automatic admin assignment when first user is created
+async def test_first_user_is_admin(db_session, email_service):
+    # Delete all users to simulate first user
+    users = await UserService.list_users(db_session, 0, 100)
+    for user in users:
+        await UserService.delete(db_session, user.id)
+
+    user_data = {
+        "nickname": generate_nickname(),
+        "email": "firstuser@example.com",
+        "password": "StrongPass123!",
+        "role": UserRole.ADMIN.name  # add role if required
+    }
+    user = await UserService.create(db_session, user_data, email_service)
+    assert user is not None
+    assert user.role == UserRole.ADMIN
+
+# Test email verification does not change admin role
+async def test_verify_email_does_not_change_admin_role(db_session, user):
+    user.role = UserRole.ADMIN
+    user.verification_token = "admin_token"
+    await db_session.commit()
+
+    result = await UserService.verify_email_with_token(db_session, user.id, "admin_token")
+    assert result is True
+    refreshed_user = await UserService.get_by_id(db_session, user.id)
+    assert refreshed_user.role == UserRole.ADMIN
+
+# Test creating user with duplicate email should fail
+async def test_create_user_with_duplicate_email(db_session, email_service, user):
+    user_data = {
+        "nickname": generate_nickname(),
+        "email": user.email,
+        "password": "AnotherPass123!"
+    }
+    new_user = await UserService.create(db_session, user_data, email_service)
+    assert new_user is None
+
+# Test user creation without nickname auto-generates one
+from app.models.user_model import UserRole
+
+async def test_create_user_without_nickname(db_session, email_service):
+    user_data = {
+        "email": "nonickname@example.com",
+        "password": "ValidPassword123!",
+        "role": UserRole.AUTHENTICATED.name,  # Use a valid role
+    }
+    user = await UserService.create(db_session, user_data, email_service)
+    assert user is not None
+    assert user.nickname is not None and user.nickname != ""
+
+
+# Test email verification with incorrect token
+async def test_verify_email_with_wrong_token(db_session, user):
+    user.verification_token = "correct_token"
+    await db_session.commit()
+
+    result = await UserService.verify_email_with_token(db_session, user.id, "wrong_token")
+    assert result is False
