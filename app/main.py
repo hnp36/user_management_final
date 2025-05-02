@@ -1,5 +1,8 @@
 from builtins import Exception
 from fastapi import FastAPI
+from fastapi.testclient import TestClient
+from httpx import patch
+import pytest
 from starlette.responses import JSONResponse
 from starlette.middleware.cors import CORSMiddleware  # Import the CORSMiddleware
 from app.database import Database
@@ -40,3 +43,25 @@ async def exception_handler(request, exc):
 app.include_router(user_routes.router)
 
 
+# Test for startup event
+@pytest.mark.asyncio
+async def test_startup_event():
+    with patch.object(Database, 'initialize', autospec=True) as mock_db_init:
+        # Trigger the startup event manually by calling the app's lifecycle
+        await app.dispatch_event("startup")
+        mock_db_init.assert_called_once()
+
+# Test for exception handler
+@pytest.mark.asyncio
+async def test_exception_handler(client: TestClient):
+    # Simulate an endpoint that raises an exception
+    @app.get("/raise-error")
+    async def raise_error():
+        raise Exception("Test exception")
+    
+    # Make a request to the endpoint that raises an exception
+    response = client.get("/raise-error")
+    
+    # Check if the exception handler is working correctly
+    assert response.status_code == 500
+    assert response.json() == {"message": "An unexpected error occurred."}
