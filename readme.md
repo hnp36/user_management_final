@@ -2,6 +2,78 @@
 
 # The User Management System Final Project: Your Epic Coding Adventure Awaits! 🎉✨🔥
 
+
+## Reflection Document
+[Click Here] (https://docs.google.com/document/d/1d5hE5AL82Cw51x03yNJM6t4-dn408QugRSyOQGnjcfI/edit?usp=sharing)
+
+## Closed Issues (Bug Fixes)
+
+1. **Bug #1:**[The user ID is None when you click on Verify Email.](https://github.com/hnp36/user_management_final/issues/3)
+  ## Description
+- Click on Verify Email in the email received
+- The error occurs with no user ID in the URL
+
+2. **Bug #2:**[Updated password requirements for enhanced security](https://github.com/hnp36/user_management_final/issues/5)
+ ## Description
+n the previous implementation of the UserCreate class, there was no validation for password strength, allowing weak passwords to be accepted. This oversight could lead to security vulnerabilities, as users could create passwords that are easy to guess or susceptible to brute-force attacks.
+
+Steps to Reproduce:
+Use the UserCreate class to create a new user with a weak password (for example, "password123" or "12345678").
+Observe that no error is raised, and the weak password is accepted.
+This lack of validation fails to enforce strong password policies, ultimately reducing the overall security of the system.
+
+Summary of Password Validation Fix:
+A function named validate_password_strength() was created to enforce the following password requirements:
+
+At least 8 characters long
+Mixed case letters
+Inclusion of numbers
+Use of special characters
+Avoidance of common passwords
+This function has been applied to the UserCreate, UserUpdate, and LoginRequest classes. Comprehensive tests for validation rules and various edge cases have also been added.
+3. **Bug #3:**[Missing Parameter Check ](https://github.com/hnp36/user_management_final/issues/7)
+ ## Description
+Missing Parameter Check
+Steps to reproduce:
+
+1.Access the User Management Swagger UI at: http://localhost/docs
+2.Navigate to the Login and Registration section.
+3.Click on the 'Try it Out' link in the' Post Register' section.
+4.Enter the details for a new user in the request body and click "Execute."
+5.Open the database using the link: http://localhost:5050/browser.
+6.Update the is_professional flag for any user to "true" in the database.
+7.Go back to the User Management Swagger UI at: http://localhost/docs
+8.In the GET/USERS section, provide the UUID (unique identifier) of the user whose is_professional flag you changed to "true."
+9.You will encounter an error: the user details retrieved will still show the is_professional flag as "false," regardless of the updated value.
+
+To resolve this issue, modify the user_routes.py file by adding the is_professional flag.
+
+After implementing this fix, the user will correctly display the accurate value of the is_professional flag when their details are retrieved from Swagger.
+
+4. **Bug #4:**[There was an incorrect assignment of roles during the verification of the admin email.](https://github.com/hnp36/user_management_final/issues/9)
+ ## Description
+ In the current implementation of verify_email_with_token, users who verify their email address are assigned the role of AUTHENTICATED, regardless of their original role. This behavior unintentionally overwrites roles such as ADMIN or MANAGER, resulting in permission downgrades.
+ I identified that the 'verify_email_with_token' method only checked for the ANONYMOUS role, but it required improved logging. Upon investigation, I found the primary issue was in the 'create' method, which was not honoring the roles provided in the input data. I modified the 'create' method to verify whether a role was explicitly set before applying the default role assignment logic. Additionally, I added detailed logging throughout the authentication flow to facilitate easier troubleshooting.
+
+5. **Bug #5:**[Modify the Dockerfile to permit building with a specific allowed version of libc-bin.](https://github.com/hnp36/user_management_final/issues/12)
+ ## Description
+ Allows libc-bin to be reverted to the specified version (2.36-9+deb12u7) via package manager downgrade.
+
+## NewFeature
+
+# Localization Support :
+Added support for multi-language functionality, enabling users to choose their preferred language for API responses and interface content. This feature includes dynamic language switching, fallback mechanisms for untranslated content, and timezone management. Translation resources are organized into files for easy updates and maintenance.
+
+This localization feature allows the application to cater to a global audience by supporting multiple languages based on user preferences. It ensures that user-facing text in API responses and interface elements can be translated seamlessly. The implementation involves integrating a localization library, defining supported languages, creating translation files, and updating the codebase to utilize localized text. Additional features include real-time language switching, fallback support for missing translations, and proper timezone adjustments. Comprehensive unit tests have been added to validate the functionality and reliability of the localization system.
+
+## DockerHub
+![Docker Image](docker.png)
+
+[DockerHub Repository](https://hub.docker.com/repository/docker/hetvipatel36/user_management_final-fastapi/general)
+
+
+
+
 ## Introduction: Buckle Up for the Ride of a Lifetime 🚀🎬
 
 Welcome to the User Management System project - an epic open-source adventure crafted by the legendary Professor Keith Williams for his rockstar students at NJIT! 🏫👨‍🏫⭐ This project is your gateway to coding glory, providing a bulletproof foundation for a user management system that will blow your mind! 🤯 You'll bridge the gap between the realms of seasoned software pros and aspiring student developers like yourselves. 
