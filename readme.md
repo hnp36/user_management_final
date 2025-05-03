@@ -4,7 +4,7 @@
 
 
 ## Reflection Document
-[Click Here] (https://docs.google.com/document/d/1d5hE5AL82Cw51x03yNJM6t4-dn408QugRSyOQGnjcfI/edit?usp=sharing)
+[click_here] (https://docs.google.com/document/d/1d5hE5AL82Cw51x03yNJM6t4-dn408QugRSyOQGnjcfI/edit?usp=sharing)
 
 ## Closed Issues (Bug Fixes)
 
@@ -31,6 +31,7 @@ Inclusion of numbers
 Use of special characters
 Avoidance of common passwords
 This function has been applied to the UserCreate, UserUpdate, and LoginRequest classes. Comprehensive tests for validation rules and various edge cases have also been added.
+
 3. **Bug #3:**[Missing Parameter Check ](https://github.com/hnp36/user_management_final/issues/7)
  ## Description
 Missing Parameter Check
