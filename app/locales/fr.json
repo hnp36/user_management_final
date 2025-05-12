@@ -1,0 +1,21 @@
+{
+    "greeting": "Bonjour !",
+    "welcome": "Bienvenue sur notre application !",
+    "email_verification_subject": "Vérifiez votre compte",
+    "password_reset_subject": "Instructions de réinitialisation du mot de passe",
+    "account_locked_subject": "Notification de compte verrouillé",
+    "user_not_found": "Utilisateur non trouvé",
+    "email_already_exists": "L'adresse e-mail existe déjà",
+    "invalid_credentials": "E-mail ou mot de passe incorrect",
+    "account_locked": "Compte verrouillé en raison de trop nombreuses tentatives de connexion échouées",
+    "invalid_token": "Impossible de valider les informations d'identification",
+    "permission_denied": "Opération non autorisée",
+    "email_verified": "E-mail vérifié avec succès",
+    "invalid_verification_token": "Jeton de vérification invalide ou expiré",
+    "internal_error": "Une erreur inattendue s'est produite",
+    "language_updated": "Préférence de langue mise à jour avec succès",
+    "timezone_updated": "Fuseau horaire mis à jour avec succès",
+    "language_switch_success": "Langue changée en français",
+    "profile_update_success": "Profil mis à jour avec succès",
+    "verification_email_sent": "Un e-mail de vérification a été envoyé à votre adresse"
+  }
