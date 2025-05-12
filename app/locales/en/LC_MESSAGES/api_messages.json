@@ -1,0 +1,20 @@
+{
+    "internal_server_error": "Internal server error",
+    "not_found": "Resource not found",
+    "unauthorized": "Unauthorized access",
+    "validation_error": "Validation error",
+    "success": "Success",
+    "user_created": "User created successfully",
+    "user_updated": "User updated successfully",
+    "user_deleted": "User deleted successfully",
+    "user_not_found": "User not found",
+    "email_already_exists": "Email already exists",
+    "nickname_already_exists": "Nickname already exists",
+    "invalid_credentials": "Invalid credentials",
+    "account_locked": "Account is locked",
+    "account_not_verified": "Account is not verified",
+    "verification_successful": "Email verification successful",
+    "verification_failed": "Email verification failed",
+    "password_reset_successful": "Password reset successful",
+    "password_reset_failed": "Password reset failed"
+}

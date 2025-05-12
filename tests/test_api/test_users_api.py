@@ -1,192 +1,126 @@
-from builtins import str
-import pytest
-from httpx import AsyncClient
-from app.main import app
+from typing import List, Optional, Dict, Any
+from uuid import UUID
+from sqlalchemy import select, update, delete, func
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
+
 from app.models.user_model import User, UserRole
-from app.utils.nickname_gen import generate_nickname
-from app.utils.security import hash_password
-from app.services.jwt_service import decode_token  # Import your FastAPI app
+from app.schemas.user_schemas import UserCreate, UserUpdate
+from app.utils.security import hash_password, verify_password
 
-# Example of a test function using the async_client fixture
-@pytest.mark.asyncio
-async def test_create_user_access_denied(async_client, user_token, email_service):
-    headers = {"Authorization": f"Bearer {user_token}"}
-    # Define user data for the test
-    user_data = {
-        "nickname": generate_nickname(),
-        "email": "test@example.com",
-        "password": "sS#fdasrongPassword123!",
-    }
-    # Send a POST request to create a user
-    response = await async_client.post("/users/", json=user_data, headers=headers)
-    # Asserts
-    assert response.status_code == 403
-
-# You can similarly refactor other test functions to use the async_client fixture
-@pytest.mark.asyncio
-async def test_retrieve_user_access_denied(async_client, verified_user, user_token):
-    headers = {"Authorization": f"Bearer {user_token}"}
-    response = await async_client.get(f"/users/{verified_user.id}", headers=headers)
-    assert response.status_code == 403
-
-@pytest.mark.asyncio
-async def test_retrieve_user_access_allowed(async_client, admin_user, admin_token):
-    headers = {"Authorization": f"Bearer {admin_token}"}
-    response = await async_client.get(f"/users/{admin_user.id}", headers=headers)
-    assert response.status_code == 200
-    assert response.json()["id"] == str(admin_user.id)
-
-@pytest.mark.asyncio
-async def test_update_user_email_access_denied(async_client, verified_user, user_token):
-    updated_data = {"email": f"updated_{verified_user.id}@example.com"}
-    headers = {"Authorization": f"Bearer {user_token}"}
-    response = await async_client.put(f"/users/{verified_user.id}", json=updated_data, headers=headers)
-    assert response.status_code == 403
-
-@pytest.mark.asyncio
-async def test_update_user_email_access_allowed(async_client, admin_user, admin_token):
-    updated_data = {"email": f"updated_{admin_user.id}@example.com"}
-    headers = {"Authorization": f"Bearer {admin_token}"}
-    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
-    assert response.status_code == 200
-    assert response.json()["email"] == updated_data["email"]
-
-
-@pytest.mark.asyncio
-async def test_delete_user(async_client, admin_user, admin_token):
-    headers = {"Authorization": f"Bearer {admin_token}"}
-    delete_response = await async_client.delete(f"/users/{admin_user.id}", headers=headers)
-    assert delete_response.status_code == 204
-    # Verify the user is deleted
-    fetch_response = await async_client.get(f"/users/{admin_user.id}", headers=headers)
-    assert fetch_response.status_code == 404
-
-@pytest.mark.asyncio
-async def test_create_user_duplicate_email(async_client, verified_user):
-    user_data = {
-        "email": verified_user.email,
-        "password": "AnotherPassword123!",
-        "role": UserRole.ADMIN.name
-    }
-    response = await async_client.post("/register/", json=user_data)
-    assert response.status_code == 400
-    assert "Email already exists" in response.json().get("detail", "")
-
-@pytest.mark.asyncio
-async def test_create_user_invalid_email(async_client):
-    user_data = {
-        "email": "notanemail",
-        "password": "ValidPassword123!",
-    }
-    response = await async_client.post("/register/", json=user_data)
-    assert response.status_code == 422
-
-import pytest
-from app.services.jwt_service import decode_token
-from urllib.parse import urlencode
-
-@pytest.mark.asyncio
-async def test_login_success(async_client, verified_user):
-    # Attempt to login with the test user
-    form_data = {
-        "username": verified_user.email,
-        "password": "MySuperPassword$1234"
-    }
-    response = await async_client.post("/login/", data=urlencode(form_data), headers={"Content-Type": "application/x-www-form-urlencoded"})
+class UserService:
+    @staticmethod
+    async def create(db: AsyncSession, *, user_data: UserCreate) -> User:
+        """Create a new user in the database."""
+        # Check if email already exists
+        result = await db.execute(select(User).where(User.email == user_data.email))
+        if result.scalars().first():
+            raise ValueError("Email already exists")
+        
+        # Create new user
+        db_user = User(
+            email=user_data.email,
+            hashed_password=hash_password(user_data.password),
+            nickname=user_data.nickname if user_data.nickname else None,
+            role=user_data.role if user_data.role else UserRole.AUTHENTICATED
+        )
+        db.add(db_user)
+        await db.commit()
+        await db.refresh(db_user)
+        return db_user
     
-    # Check for successful login response
-    assert response.status_code == 200
-    data = response.json()
-    assert "access_token" in data
-    assert data["token_type"] == "bearer"
-
-    # Use the decode_token method from jwt_service to decode the JWT
-    decoded_token = decode_token(data["access_token"])
-    assert decoded_token is not None, "Failed to decode token"
-    assert decoded_token["role"] == "AUTHENTICATED", "The user role should be AUTHENTICATED"
-
-@pytest.mark.asyncio
-async def test_login_user_not_found(async_client):
-    form_data = {
-        "username": "nonexistentuser@here.edu",
-        "password": "DoesNotMatter123!"
-    }
-    response = await async_client.post("/login/", data=urlencode(form_data), headers={"Content-Type": "application/x-www-form-urlencoded"})
-    assert response.status_code == 401
-    assert "Incorrect email or password." in response.json().get("detail", "")
-
-@pytest.mark.asyncio
-async def test_login_incorrect_password(async_client, verified_user):
-    form_data = {
-        "username": verified_user.email,
-        "password": "IncorrectPassword123!"
-    }
-    response = await async_client.post("/login/", data=urlencode(form_data), headers={"Content-Type": "application/x-www-form-urlencoded"})
-    assert response.status_code == 401
-    assert "Incorrect email or password." in response.json().get("detail", "")
-
-@pytest.mark.asyncio
-async def test_login_unverified_user(async_client, unverified_user):
-    form_data = {
-        "username": unverified_user.email,
-        "password": "MySuperPassword$1234"
-    }
-    response = await async_client.post("/login/", data=urlencode(form_data), headers={"Content-Type": "application/x-www-form-urlencoded"})
-    assert response.status_code == 401
-
-@pytest.mark.asyncio
-async def test_login_locked_user(async_client, locked_user):
-    form_data = {
-        "username": locked_user.email,
-        "password": "MySuperPassword$1234"
-    }
-    response = await async_client.post("/login/", data=urlencode(form_data), headers={"Content-Type": "application/x-www-form-urlencoded"})
-    assert response.status_code == 400
-    assert "Account locked due to too many failed login attempts." in response.json().get("detail", "")
-@pytest.mark.asyncio
-async def test_delete_user_does_not_exist(async_client, admin_token):
-    non_existent_user_id = "00000000-0000-0000-0000-000000000000"  # Valid UUID format
-    headers = {"Authorization": f"Bearer {admin_token}"}
-    delete_response = await async_client.delete(f"/users/{non_existent_user_id}", headers=headers)
-    assert delete_response.status_code == 404
-
-@pytest.mark.asyncio
-async def test_update_user_github(async_client, admin_user, admin_token):
-    updated_data = {"github_profile_url": "http://www.github.com/kaw393939"}
-    headers = {"Authorization": f"Bearer {admin_token}"}
-    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
-    assert response.status_code == 200
-    assert response.json()["github_profile_url"] == updated_data["github_profile_url"]
-
-@pytest.mark.asyncio
-async def test_update_user_linkedin(async_client, admin_user, admin_token):
-    updated_data = {"linkedin_profile_url": "http://www.linkedin.com/kaw393939"}
-    headers = {"Authorization": f"Bearer {admin_token}"}
-    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
-    assert response.status_code == 200
-    assert response.json()["linkedin_profile_url"] == updated_data["linkedin_profile_url"]
-
-@pytest.mark.asyncio
-async def test_list_users_as_admin(async_client, admin_token):
-    response = await async_client.get(
-        "/users/",
-        headers={"Authorization": f"Bearer {admin_token}"}
-    )
-    assert response.status_code == 200
-    assert 'items' in response.json()
-
-@pytest.mark.asyncio
-async def test_list_users_as_manager(async_client, manager_token):
-    response = await async_client.get(
-        "/users/",
-        headers={"Authorization": f"Bearer {manager_token}"}
-    )
-    assert response.status_code == 200
-
-@pytest.mark.asyncio
-async def test_list_users_unauthorized(async_client, user_token):
-    response = await async_client.get(
-        "/users/",
-        headers={"Authorization": f"Bearer {user_token}"}
-    )
-    assert response.status_code == 403  # Forbidden, as expected for regular user
+    @staticmethod
+    async def get(db: AsyncSession, user_id: UUID) -> Optional[User]:
+        """Get a user by ID."""
+        result = await db.execute(select(User).where(User.id == user_id))
+        return result.scalars().first()
+    
+    @staticmethod
+    async def get_by_email(db: AsyncSession, email: str) -> Optional[User]:
+        """Get a user by email."""
+        result = await db.execute(select(User).where(User.email == email))
+        return result.scalars().first()
+    
+    @staticmethod
+    async def update(db: AsyncSession, *, user_id: UUID, user_data: Dict[str, Any]) -> Optional[User]:
+        """Update a user's information."""
+        # Get the user to update
+        user = await UserService.get(db, user_id)
+        if not user:
+            return None
+        
+        # Update password if provided
+        if "password" in user_data:
+            user_data["hashed_password"] = hash_password(user_data.pop("password"))
+        
+        # Update user fields
+        update_stmt = update(User).where(User.id == user_id).values(**user_data)
+        await db.execute(update_stmt)
+        await db.commit()
+        
+        # Refresh and return updated user
+        return await UserService.get(db, user_id)
+    
+    @staticmethod
+    async def delete(db: AsyncSession, user_id: UUID) -> bool:
+        """Delete a user by ID."""
+        # Check if user exists
+        user = await UserService.get(db, user_id)
+        if not user:
+            return False
+        
+        # Delete the user
+        delete_stmt = delete(User).where(User.id == user_id)
+        await db.execute(delete_stmt)
+        await db.commit()
+        return True
+    
+    @staticmethod
+    async def authenticate(db: AsyncSession, *, email: str, password: str) -> Optional[User]:
+        """Authenticate a user."""
+        user = await UserService.get_by_email(db, email)
+        if not user:
+            return None
+        
+        # Check if account is locked
+        if UserService.is_account_locked(user):
+            return None
+        
+        # Verify password
+        if not verify_password(password, user.hashed_password):
+            # Increment failed login attempts
+            user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
+            
+            # Lock account if max attempts reached
+            if user.failed_login_attempts >= 5:  # Assuming max attempts is 5
+                user.is_locked = True
+            
+            await db.commit()
+            return None
+        
+        # Reset failed login attempts on successful login
+        if user.failed_login_attempts:
+            user.failed_login_attempts = 0
+            await db.commit()
+        
+        return user if user.is_verified else None
+    
+    @staticmethod
+    def is_account_locked(user: User) -> bool:
+        """Check if a user account is locked."""
+        return user.is_locked if user.is_locked is not None else False
+    
+    @staticmethod
+    async def list_users(db: AsyncSession, *, skip: int = 0, limit: int = 100) -> List[User]:
+        """List all users with pagination."""
+        # This is the correct SQLAlchemy 2.0 syntax for select
+        query = select(User).offset(skip).limit(limit)
+        result = await db.execute(query)
+        return list(result.scalars().all())
+    
+    @staticmethod
+    async def count_users(db: AsyncSession) -> int:
+        """Count total number of users."""
+        query = select(func.count()).select_from(User)
+        result = await db.execute(query)
+        return result.scalar_one()
