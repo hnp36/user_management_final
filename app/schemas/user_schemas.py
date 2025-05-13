@@ -17,6 +17,40 @@ def validate_url(url: Optional[str]) -> Optional[str]:
         raise ValueError('Invalid URL format')
     return url
 
+def validate_password_strength(password: str) -> str:
+    """
+    Validates password strength based on multiple criteria:
+    - Minimum 8 characters
+    - At least one uppercase letter
+    - At least one lowercase letter
+    - At least one number
+    - At least one special character
+    
+    Returns the password if valid, otherwise raises a ValueError with details.
+    """
+    errors = []
+
+    if len(password) < 8:
+        errors.append("Password must be at least 8 characters long.")
+    if not any(char.isupper() for char in password):
+        errors.append("Password must include at least one uppercase letter.")
+    if not any(char.islower() for char in password):
+        errors.append("Password must include at least one lowercase letter.")
+    if not any(char.isdigit() for char in password):
+        errors.append("Password must include at least one number.")
+    if not any(char in "!@#$%^&*(),.?\":{}|<>" for char in password):
+        errors.append("Password must include at least one special character (!@#$%^&*(),.?\":{}|<>).")
+    
+    # Common passwords check
+    common_passwords = {"password", "123456", "qwerty", "admin", "welcome", "123456789"}
+    if password.lower() in common_passwords:
+        errors.append("Password is too common and easily guessable.")
+
+    if errors:
+        raise ValueError(" ".join(errors)) 
+
+    return password
+
 class UserBase(BaseModel):
     email: EmailStr = Field(..., example="john.doe@example.com")
     nickname: Optional[str] = Field(None, min_length=3, pattern=r'^[\w-]+$', example=generate_nickname())
@@ -36,6 +70,9 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     email: EmailStr = Field(..., example="john.doe@example.com")
     password: str = Field(..., example="Secure*1234")
+    
+    # Validate password strength
+    _validate_password = validator('password', allow_reuse=True)(validate_password_strength)
 
 class UserUpdate(UserBase):
     email: Optional[EmailStr] = Field(None, example="john.doe@example.com")
@@ -47,7 +84,16 @@ class UserUpdate(UserBase):
     linkedin_profile_url: Optional[str] =Field(None, example="https://linkedin.com/in/johndoe")
     github_profile_url: Optional[str] = Field(None, example="https://github.com/johndoe")
     role: Optional[str] = Field(None, example="AUTHENTICATED")
-
+    # Optional password update
+    password: Optional[str] = Field(None, example="NewSecure*5678")
+    
+    # Validate password strength if provided
+    @validator('password')
+    def validate_password_if_provided(cls, password):
+        if password is not None:
+            return validate_password_strength(password)
+        return password
+    
     @root_validator(pre=True)
     def check_at_least_one_value(cls, values):
         if not any(values.values()):
@@ -64,6 +110,9 @@ class UserResponse(UserBase):
 class LoginRequest(BaseModel):
     email: str = Field(..., example="john.doe@example.com")
     password: str = Field(..., example="Secure*1234")
+    
+    # Use the same password validation as UserCreate
+    _validate_password = validator('password', allow_reuse=True)(validate_password_strength)
 
 class ErrorResponse(BaseModel):
     error: str = Field(..., example="Not Found")

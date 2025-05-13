@@ -1,3 +1,5 @@
+
+
 """
 File: test_database_operations.py
 
@@ -18,6 +20,7 @@ from builtins import Exception, range, str
 from datetime import timedelta
 from unittest.mock import AsyncMock, patch
 from uuid import uuid4
+import uuid
 
 # Third-party imports
 import pytest
@@ -238,3 +241,19 @@ def email_service():
         mock_service.send_verification_email.return_value = None
         mock_service.send_user_email.return_value = None
         return mock_service
+    
+@pytest.fixture
+def unique_user_data():
+        def generate_user_data():
+            password = "MySecurePassword$1234"
+            if len(password) < 8 or not any(char.isdigit() for char in password) or not any(char.isupper() for char in password) or not any(char.islower() for char in password) or not any(char in "!@#$%^&*()-_=+[]{}|;:,.<>?/" for char in password):
+                raise ValueError("Password must be at least 8 characters long, include a number, an uppercase letter, a lowercase letter, and a special character.")
+            return {
+                "nickname": f"user_{uuid.uuid4().hex[:8]}",
+                "email": f"user_{uuid.uuid4().hex[:8]}@example.com",
+                "first_name": "Test",
+                "last_name": "User",
+                "role": "AUTHENTICATED",
+                "password": password
+            }
+        return generate_user_data()
